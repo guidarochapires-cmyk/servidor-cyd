@@ -1,11 +1,7 @@
 import express from 'express';
-import { GoogleGenAI } from '@google/genai';
 
 const app = express();
 const port = process.env.PORT || 3000;
-
-// Inicialização atualizada exigindo explicitamente a chave guardada no Render
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.get('/perguntar', async (req, res) => {
     const pergunta = req.query.q;
@@ -15,24 +11,39 @@ app.get('/perguntar', async (req, res) => {
     }
 
     try {
-        // Usando o modelo rápido padrão mais recente
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: pergunta,
-            config: {
-                // Filtro estrito para o monitor serial do seu CYD
-                systemInstruction: 'Você é um assistente para microcontroladores IoT com memória RAM limitada. Responda SEMPRE em texto puro, direto e resumido. NUNCA use formatação Markdown (como asteriscos, hashtags ou listas), NUNCA use HTML, NUNCA use emojis. Use no máximo 2 frases curtas.',
+        const apiKey = process.env.GEMINI_API_KEY;
+        
+        // URL direta da API do Google, sem depender de bibliotecas externas
+        const url = `https://googleapis.com{apiKey}`;
+
+        // Corpo da requisição com o treinamento estrito para o seu CYD
+        const payload = {
+            contents: [{ parts: [{ text: pergunta }] }],
+            systemInstruction: {
+                parts: [{ text: "Você é um assistente para microcontroladores IoT com memória RAM limitada. Responda SEMPRE em português, com texto puro, direto e resumido. NUNCA use formatação Markdown (como asteriscos, hashtags ou listas), NUNCA use HTML, NUNCA use emojis. Use no máximo 2 frases curtas." }]
             }
+        };
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
 
-        const textoLimpo = response.text.trim();
+        const data = await response.json();
 
-        // Envia a resposta como texto simples puro
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        res.send(textoLimpo);
+        // Extrai o texto de dentro da estrutura do Google
+        if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+            const textoLimpo = data.candidates[0].content.parts[0].text.trim();
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            return res.send(textoLimpo);
+        } else {
+            console.error("Resposta inesperada do Google:", data);
+            return res.status(500).send('Erro: Resposta invalida da IA. Verifique sua Chave API.');
+        }
 
     } catch (error) {
-        console.error("Erro na IA:", error);
+        console.error("Erro interno:", error);
         res.status(500).send('Erro ao processar a resposta da IA.');
     }
 });
