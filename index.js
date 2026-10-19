@@ -15,9 +15,9 @@ app.get('/perguntar', async (req, res) => {
     }
 
     try {
-        // Usando o SDK oficial do Google para evitar o erro de rede do "fetch failed"
+        // Modelo atualizado exigido pelo Google Gemini
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3.8-flash',
             contents: pergunta,
             config: {
                 systemInstruction: "Você é um assistente para microcontroladores IoT. Responda em português, com texto puro, muito curto, direto e sem usar formatação Markdown ou HTML. Use no máximo 2 frases.",
@@ -35,7 +35,6 @@ app.get('/perguntar', async (req, res) => {
 
     } catch (error) {
         console.error("Erro detalhado:", error);
-        // Se a sua chave estiver errada ou faltar algo, ele vai cuspir o motivo real aqui
         res.status(500).send(`Erro na Comunicação com a IA: ${error.message}`);
     }
 });
