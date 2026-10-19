@@ -4,8 +4,8 @@ import { GoogleGenAI } from '@google/genai';
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Inicializa a API do Gemini buscando a chave oculta que colocaremos no Render
-const ai = new GoogleGenAI();
+// Inicialização atualizada exigindo explicitamente a chave guardada no Render
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.get('/perguntar', async (req, res) => {
     const pergunta = req.query.q;
@@ -15,25 +15,24 @@ app.get('/perguntar', async (req, res) => {
     }
 
     try {
-        // Modelo leve, extremamente rápido e atualizado
+        // Usando o modelo rápido padrão mais recente
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: pergunta,
             config: {
-                // Instrução secreta do sistema: força a IA a responder apenas texto curto e limpo
-                systemInstruction: 'Você é um assistente para microcontroladores IoT com memória RAM muito limitada. Responda SEMPRE em texto puro, direto e resumido. NUNCA use formatação Markdown (como asteriscos, hashtags ou listas), NUNCA use HTML, NUNCA use emojis. Use no máximo 2 frases curtas.',
-                temperature: 0.3,
+                // Filtro estrito para o monitor serial do seu CYD
+                systemInstruction: 'Você é um assistente para microcontroladores IoT com memória RAM limitada. Responda SEMPRE em texto puro, direto e resumido. NUNCA use formatação Markdown (como asteriscos, hashtags ou listas), NUNCA use HTML, NUNCA use emojis. Use no máximo 2 frases curtas.',
             }
         });
 
         const textoLimpo = response.text.trim();
 
-        // Configura o cabeçalho para texto simples, assim o ESP32 lê direto sem decodificar nada
+        // Envia a resposta como texto simples puro
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.send(textoLimpo);
 
     } catch (error) {
-        console.error(error);
+        console.error("Erro na IA:", error);
         res.status(500).send('Erro ao processar a resposta da IA.');
     }
 });
