@@ -12,8 +12,6 @@ app.get('/perguntar', async (req, res) => {
 
     try {
         const apiKey = process.env.GEMINI_API_KEY;
-        
-        // URL direta da API do Google Gemini
         const url = `https://googleapis.com{apiKey}`;
 
         const payload = {
@@ -31,24 +29,20 @@ app.get('/perguntar', async (req, res) => {
 
         const data = await response.json();
 
-        // Se o Google devolver erro, jogamos o erro direto na tela para saber o que é
+        // Se o Google devolver um erro de chave ou cota, mostra direto na tela
         if (data.error) {
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             return res.status(400).send(`Erro do Google: ${data.error.message} (Código: ${data.error.code})`);
         }
 
-        // Extrai o texto se tudo deu certo
-        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        // Tenta ler a resposta da IA de forma segura
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
             const textoLimpo = data.candidates[0].content.parts[0].text.trim();
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            return res.send(textoLimpo);
-        } else if (data.candidates && data.candidates.content && data.candidates.content.parts) {
-            // Segunda variação de formato da API do Gemini
-            const textoLimpo = data.candidates.content.parts.text.trim();
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             return res.send(textoLimpo);
         }
 
+        // Se o formato vier diferente, mostra o JSON cru para nós investigarmos
         res.setHeader('Content-Type', 'application/json');
         return res.status(500).send(JSON.stringify(data));
 
