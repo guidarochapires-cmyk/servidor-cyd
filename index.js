@@ -1,7 +1,11 @@
 import express from 'express';
+import { GoogleGenAI } from '@google/genai';
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Inicializa a IA usando o formato oficial do Google
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.get('/perguntar', async (req, res) => {
     const pergunta = req.query.q;
@@ -11,46 +15,31 @@ app.get('/perguntar', async (req, res) => {
     }
 
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        const url = `https://googleapis.com{apiKey}`;
-
-        const payload = {
-            contents: [{ parts: [{ text: pergunta }] }],
-            systemInstruction: {
-                parts: [{ text: "Você é um assistente para microcontroladores IoT. Responda em português, com texto puro, curto e sem markdown ou HTML." }]
+        // Usando o SDK oficial do Google para evitar o erro de rede do "fetch failed"
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: pergunta,
+            config: {
+                systemInstruction: "Você é um assistente para microcontroladores IoT. Responda em português, com texto puro, muito curto, direto e sem usar formatação Markdown ou HTML. Use no máximo 2 frases.",
+                temperature: 0.3
             }
-        };
-
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
-
-        // Se o Google devolver um erro de chave ou cota, mostra direto na tela
-        if (data.error) {
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            return res.status(400).send(`Erro do Google: ${data.error.message} (Código: ${data.error.code})`);
-        }
-
-        // Tenta ler a resposta da IA de forma segura
-        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
-            const textoLimpo = data.candidates[0].content.parts[0].text.trim();
+        if (response && response.text) {
+            const textoLimpo = response.text.trim();
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             return res.send(textoLimpo);
+        } else {
+            return res.status(500).send('Erro: O Google não retornou nenhum texto.');
         }
 
-        // Se o formato vier diferente, mostra o JSON cru para nós investigarmos
-        res.setHeader('Content-Type', 'application/json');
-        return res.status(500).send(JSON.stringify(data));
-
     } catch (error) {
-        res.status(500).send(`Erro interno do servidor: ${error.message}`);
+        console.error("Erro detalhado:", error);
+        // Se a sua chave estiver errada ou faltar algo, ele vai cuspir o motivo real aqui
+        res.status(500).send(`Erro na Comunicação com a IA: ${error.message}`);
     }
 });
 
 app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
+    console.log(`Servidor rodando com sucesso na porta ${port}`);
 });
