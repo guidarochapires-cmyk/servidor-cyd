@@ -21,7 +21,7 @@ app.get('/perguntar', async (req, res) => {
             contents: pergunta,
             config: {
                 // Treinamento de identidade: Agora ela sabe que se chama ClockIA
-                systemInstruction: "Seu nome é ClockIA. Você é um assistente inteligente integrado a um microcontrolador IoT de mesa. Responda sempre em português, com texto puro, muito curto, direto e sem usar formatação Markdown ou HTML. Use no máximo 2 frases.",
+                systemInstruction: "Seu nome é ClockIA. Você é um assistente inteligente integrado a um microcontrolador CYD. Responda sempre em português, com texto mediano, muito curto, direto e sem usar formatação Markdown ou HTML. Use no máximo 4 frases.",
                 temperature: 0.3
             }
         });
