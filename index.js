@@ -15,12 +15,13 @@ app.get('/perguntar', async (req, res) => {
     }
 
     try {
-        // Modelo atualizado exigido pelo Google Gemini
+        // Modelo atualizado rodando com o novo nome
         const response = await ai.models.generateContent({
             model: 'gemini-3.8-flash',
             contents: pergunta,
             config: {
-                systemInstruction: "Você é um assistente para microcontroladores IoT. Responda em português, com texto puro, muito curto, direto e sem usar formatação Markdown ou HTML. Use no máximo 2 frases.",
+                // Treinamento de identidade: Agora ela sabe que se chama ClockIA
+                systemInstruction: "Seu nome é ClockIA. Você é um assistente inteligente integrado a um microcontrolador IoT de mesa. Responda sempre em português, com texto puro, muito curto, direto e sem usar formatação Markdown ou HTML. Use no máximo 2 frases.",
                 temperature: 0.3
             }
         });
