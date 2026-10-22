@@ -17,7 +17,7 @@ app.get('/perguntar', async (req, res) => {
     try {
         // Modelo atualizado rodando com o novo nome
         const response = await ai.models.generateContent({
-            model: 'gemini-3.8-flash',
+            model: 'gemini-2.0-flash',
             contents: pergunta,
             config: {
                 // Treinamento de identidade: Agora ela sabe que se chama ClockIA
